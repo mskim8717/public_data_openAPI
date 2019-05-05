@@ -91,27 +91,32 @@ def execute():
                     find_routeno = "fail"
                     status = "fail"
                     existStatus = None
-                    for row, data in enumerate( soup.find_all( 'item' ) ):
-                        find_routeno = data.find( 'routeno' ).text
-                        conn = sqlite3.connect( "node_update.db" )
-                        with conn:
-                            cur = conn.cursor()
-                            cur.execute("select * from nodeInfo where routeid = ? AND nodeid = ? AND nodeno = ? AND routeno = ?", (routeid, nodeid, nodeno, find_routeno))
-                            existStatus = cur.fetchone()
-                            if existStatus is None:
-                                cur.execute(
-                                    "INSERT INTO nodeInfo(routeid, nodeid, nodeno, routeno) SELECT ?, ?, ?, ? WHERE NOT EXISTS(SELECT(routeid, nodeid, nodeno, routeno) FROM nodeInfo WHERE routeid = ? AND nodeid = ? AND nodeno = ? AND routeno = ?)",
-                                    (routeid, nodeid, nodeno, find_routeno, routeid, nodeid, nodeno, find_routeno) )
-                                conn.commit()
-                                status = "new"
-                            else:
-                                status = 'already'
-                            print( '[검색시작] 찾은노선번호:', find_routeno, data.find( 'arrtime' ).text, existStatus, status )
-                        print( '[검색종료]' )
-                        conn.close()
-                    print( datetime.now(), routeno, routeid, nodeid, nodeno, 'find:',find_routeno, 'status:', status, existStatus, '\n' )
-                    time.sleep(3)
-    print( 'finish' )
+                    if soup.find_all( 'resultmsg' ) == 'NORMAL SERVICE.':
+                        for row, data in enumerate( soup.find_all( 'item' ) ):
+                            find_routeno = data.find( 'routeno' ).text
+                            conn = sqlite3.connect( "node_update.db" )
+                            with conn:
+                                cur = conn.cursor()
+                                cur.execute("select * from nodeInfo where routeid = ? AND nodeid = ? AND nodeno = ? AND routeno = ?", (routeid, nodeid, nodeno, find_routeno))
+                                existStatus = cur.fetchone()
+                                if existStatus is None:
+                                    cur.execute(
+                                        "INSERT INTO nodeInfo(routeid, nodeid, nodeno, routeno) SELECT ?, ?, ?, ? WHERE NOT EXISTS(SELECT(routeid, nodeid, nodeno, routeno) FROM nodeInfo WHERE routeid = ? AND nodeid = ? AND nodeno = ? AND routeno = ?)",
+                                        (routeid, nodeid, nodeno, find_routeno, routeid, nodeid, nodeno, find_routeno) )
+                                    conn.commit()
+                                    status = "new"
+                                else:
+                                    status = 'already'
+                                print( '[검색시작] 찾은노선번호:', find_routeno, data.find( 'arrtime' ).text, existStatus, status )
+                            print( '[검색종료]' )
+                            conn.close()
+                        print( datetime.now(), routeno, routeid, nodeid, nodeno, 'find:',find_routeno, 'status:', status, existStatus, '\n' )
+                        time.sleep(10)
+                    else:
+                        print( '[검색 제한으로 인한 프로그램 종료]' )
+                        sys.exit()
+    print( '[프로그램 종료]' )
+    sys.exit()
 
 while True:
     execute()
